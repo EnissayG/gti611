@@ -1,97 +1,116 @@
-IPv6 — Structure
-─────────────────────────────
-128 bits = 8 groupes de 16 bits (hex)
-64 bits NetID | 64 bits Interface
-Règle demi-octet: masques multiples de 4
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IPv6 — STRUCTURE DE BASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+128 bits = 8 groupes de 16 bits en HEX
 
-Hiérarchie type:
-/44→org /48→site /52→empl /56→grp /60→succ /64→dept
+0000:0000:0000:0000:0000:0000:0000:0000
+ G1   G2   G3   G4   G5   G6   G7   G8
+|______ 64 bits NetID ______|__ 64 bits Interface __|
 
-Nb sous-réseaux = 2^(prochain_niveau - niveau_actuel)
-Ex: /48→/52 = 4 bits = 16 emplacements
+1 groupe = 4 chiffres hex = 16 bits
+1 chiffre hex = 4 bits
 
-Numérotation (bits 48-51 pour emplacements /52):
-0→0000 1→1000 2→2000 3→3000
-4→4000 5→5000 ... F→F000
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IPv6 — LIRE UNE ADRESSE EXISTANTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ Q6 EXAMEN — TYPE DE QUESTION:
+On te donne l'IP d'un hôte → trouver @réseau
 
-Préfixe site N (base /48):
-2001:abcd:120+N::/48
-(120 en hex, N s'additionne)
+RÈGLE SELON LE MASQUE:
+  /64 → garder G1:G2:G3:G4 → mettre ::/64
+  /60 → garder G1:G2:G3 + 12 premiers bits G4
+  /52 → garder G1:G2:G3 + 4 premiers bits G4
 
+MÉTHODE /64 (le plus fréquent):
+  IP: 2002:a45b:3c78:c900:b1ba:48fd:fe01:aaaa
+  → Couper après le 4e groupe
+  → @réseau = 2002:a45b:3c78:c900::/64 ✅
 
+MÉTHODE masque non-multiple de 16:
+  IP: 2002:a45b:3c78:c931:550a:48fd:feaa:1111
+  Masque /? → regarder le contexte
+  → garder les N bits → mettre reste à 0
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 IPv6 — STRUCTURE & HIÉRARCHIE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-128 bits = 8 groupes hex de 16 bits
-[   64 bits NetID    |  64 bits Interface  ]
-Règle: masques = multiples de 4 (demi-octet)
+SOUS-RÉSEAU ENTRE 2 ROUTEURS:
+  R1 interface: 2002:a45b:3c78:c930:120a:48fd:feaa:4444
+  R2 interface: 2002:a45b:3c78:c930:990a:48fd:feaa:3333
+  → Même préfixe /64 = 2002:a45b:3c78:c930::/64 ✅
+  (les 4 premiers groupes sont identiques)
 
-HIÉRARCHIE TYPE:
-/44      /48     /52    /60    /64
- Org →  Site → Empl → Succ → Dept
-         4bits  4bits  8bits  4bits
-         16     16     256    16
+PRÉFIXE /48 (1 seul site):
+  Prendre les 3 premiers groupes + ::/48
+  Ex: 2002:a45b:3c78:c900::/64
+  → /48 = 2002:a45b:3c78::/48
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IPv6 — HIÉRARCHIE & CONSTRUCTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/44    /48    /52    /60      /64
+Org → Site → Empl → Succ → Dept
+      4bits  4bits  8bits   4bits
+      16SR   16SR   256SR   16SR
 
 Nb SR = 2^(masque_suivant - masque_actuel)
+Ex: /48→/52 = 4 bits = 2^4 = 16 emplacements
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔢 NUMÉROTATION (position dans l'adresse)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Chaque niveau occupe les 4 bits SUIVANTS
-→ le chiffre hex va dans la BONNE position
+3e GROUPE = encode le SITE:
+  Base ex: 1200 → dernier chiffre = site
+  Site N → (N-1) hex → dernier chiffre
+  Site 1=1200  Site 2=1201  Site 12=120B
 
-Bits 44-47 (site)    → 4e groupe, pos 1
-Bits 48-51 (empl)    → 4e groupe, pos 2
-Bits 52-59 (succ)    → 4e groupe, pos 3+4
-Bits 60-63 (dept)    → 4e groupe, pos 4 ← 
-                         (partage avec succ)
+4e GROUPE = [EMPL][SUCC][SUCC][DEPT]:
+  Empl N → (N-1) → pos 1
+  Succ N → (N-1) sur 2 chiffres → pos 2+3
+  Dept N → (N-1) → pos 4
 
-TABLEAU DE POSITION (4e groupe = XYZW):
-  X = site (bits 44-47)
-  Y = emplacement (bits 48-51)
-  ZW = succursale (bits 52-59)
-  W = département (bits 60-63) ← écrase ZW!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONVERSION DEC → HEX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10=A  11=B  12=C  13=D  14=E  15=F
+16=10  17=11  18=12  19=13  20=14
+21=15  22=16  23=17  24=18  25=19
+26=1A  27=1B  28=1C  29=1D  30=1E
+31=1F  32=20
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ SHORTCUT — Lire l'adresse
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Base: 2001:abcd:120::/44
-                ^^^
-             3e groupe = 120 (hex fixe)
-
-Site N  → 3e groupe devient 120+N (hex)
-  Site 0 → 120  Site 1 → 121  Site 2 → 122
-
-4e groupe = [site][empl][succ][dept] en hex
-  Empl 3, Succ 0, Dept 0 → 0300 → :0300:
-  Empl 2, Succ 03, Dept 0 → :2030:
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📝 EXEMPLE TYPE (examen révision)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Préfixe: 2001:abcd:120::/44
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXEMPLE CONSTRUCTION (examen révision)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Préfixe: 2001:abcd:1200::/44
 → 2e dept, 3e succ, 3e empl, 2e site
 
-ÉTAPE PAR ÉTAPE:
-1. Site 2    → 3e grp: 120+2 = 122 → /48
-              2001:abcd:122:____ ::/48
+1. Site 2  → 1200+(2-1)=1201      /48
+2. Empl 3  → 3-1=2 → [2]___      /52
+3. Succ 3  → 3-1=2 → 02 → [2][02]_ /60
+4. Dept 2  → 2-1=1 → [2][02][1]  /64
+✅ 2001:abcd:1201:2021::/64
 
-2. Empl 3   → 4e grp pos1: 2
-              2001:abcd:122:2___::/52
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IPv4 — VLSM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TROUVER @RÉSEAU depuis IP/masque:
+  Taille bloc = 2^(32-masque)
+  @réseau = début du bloc où tombe l'IP
 
-3. Succ 3   → 4e grp pos3+4: 03
-              2001:abcd:122:2030::/60
-              (succ=03 car on commence à 01?)
-              ⚠️ succ commence à 0: 03→ pos3=0,pos4=3
-              2001:abcd:122:2030::/60 ✓
-              (si commence à 1: succ 3 = index 2 = 02)
+BLOCS PAR MASQUE:
+  /25 → 128: 0, 128
+  /26 → 64:  0, 64, 128, 192
+  /27 → 32:  0, 32, 64, 96, 128...
+  /28 → 16:  0, 16, 32, 48...
+  /30 → 4    (lien P-P = 2 hôtes)
 
-4. Dept 2   → 4e grp pos4: écrase → +1
-              2001:abcd:122:2031::/64
-              (dept 2 = index 1 si commence à 1)
+HÔTES UTILISABLES:
+  /25=126  /26=62  /27=30
+  /28=14   /29=6   /30=2
 
-RÉPONSE: 2001:abcd:122:2031::/64
+TROUVER MASQUE depuis nb hôtes H:
+  n = ceil(log2(H+2)) → masque = /32-n
+  Ex: 100h → n=7 → /25
+
+EXEMPLES Q6 EXAMEN 2021:
+  209.56.10.150/25 → bloc 128 → @réseau=209.56.10.128/25
+  209.56.10.50/26  → bloc 0   → @réseau=209.56.10.0/26
+  209.56.10.70/26  → bloc 64  → @réseau=209.56.10.64/26
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -480,4 +499,164 @@ HANDOVER:
 Intra-BSC → géré par BSC
 Inter-BSC → géré par MSC
 Inter-MSC → géré par MSC + GMSC
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NDN — EXERCICE TYPE EXAMEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RÈGLE CACHE (la plus importante):
+  1ère demande d'un paquet
+  → va jusqu'au Producteur
+  → mis en cache sur TOUT le chemin retour
+
+  Demande suivante du MÊME paquet
+  → servi par le 1er nœud sur le chemin
+    qui l'a en cache (le plus proche)
+
+  ⚠️ Un nœud cache seulement les paquets
+     qui PASSENT par lui
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MÉTHODE POUR RÉSOUDRE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Dessiner le réseau + chemins FIB
+2. Traiter les demandes dans l'ORDRE chronologique
+3. Pour chaque paquet:
+   → Vérifier CS de chaque nœud sur le chemin
+   → 1er nœud avec le paquet = celui qui répond
+   → Si aucun → Producteur répond
+   → Mettre à jour les CS après chaque échange
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXEMPLE (Exercice 5 révision)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Réseau:
+  C1 → R1 → R2 → Producteur
+  C2 → R3 → R4 → R2 → Producteur
+  (R1 et R2 sont sur les 2 chemins)
+
+Demandes:
+  C1: p00@1s | p01,p02@3s | p03,p04@4s
+  C2: p00,p01@2s | p02,p03@4s
+
+Résolution chronologique:
+  1s: C1 demande p00
+      → cache vide partout → Producteur répond
+      → p00 mis en cache: R1, R2
+
+  2s: C2 demande p00
+      → R3,R4 vides → R2 a p00 → R2 répond ✅
+      C2 demande p01
+      → cache vide partout → Producteur répond
+      → p01 mis en cache: R4, R3 (chemin C2)
+      → p01 mis en cache: R2 aussi
+
+  3s: C1 demande p01
+      → R1 vide → R2 a p01 → R2 répond ✅
+      C1 demande p02
+      → cache vide partout → Producteur répond
+      → p02 mis en cache: R2, R1
+
+  4s: C1 demande p03,p04
+      → cache vide → Producteur répond (x2)
+      C2 demande p02
+      → R3,R4 vides → R2 a p02 → R2 répond ✅
+      C2 demande p03
+      → cache vide → Producteur répond
+
+TABLEAU RÉSUMÉ:
+C1|p00|Producteur → 1ère demande
+C2|p00|R2         → R2 l'avait (chemin commun)
+C2|p01|Producteur → 1ère demande
+C1|p01|R2         → R2 l'avait (chemin commun)
+C1|p02|Producteur → 1ère demande
+C1|p03|Producteur → 1ère demande
+C1|p04|Producteur → 1ère demande
+C2|p02|R2         → R2 l'avait (C1 l'avait demandé)
+C2|p03|Producteur → 1ère demande
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHAPITRE 4 — RÉSEAUX VIRTUELS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VIRTUALISATION:
+  Divise ressources physiques → ressources virtuelles
+  Outils: KVM, Xen, OpenStack, Docker (conteneurs)
+
+TYPES D'ACCÈS RÉSEAU VM:
+  Pont (Bridge) → VM accède directement au réseau
+  NAT simulé    → trafic passe par l'OS hôte via NAT
+  Host-only     → VM communique seulement avec hôte
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NFV (Network Function Virtualization)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Idée: déplacer fonctions réseau physiques → VMs
+  Routeur, firewall, load balancer, NAT, IDS/IPS
+  → tournent sur hardware générique
+
+Composantes:
+  VNF  = Virtual Network Function (la fonction)
+  NFVI = Infrastructure (calcul+stockage+réseau virtuel)
+  MANO = Management & Orchestration
+
+Avantages:
+  → Pas de matériel dédié
+  → Déploiement rapide
+  → Échelonnement dynamique
+  → Réduction coûts
+
+SFC (Service Function Chain):
+  → Enchaînement de VNFs dans un ordre précis
+  Ex: message SIP → pare-feu → load balancer → S-CSCF
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VTEP (Q7 associations)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+VXLAN = protocole tunnel L2 sur L3
+VTEP  = Virtual Tunnel End Point
+      = passerelle qui encapsule/décapsule
+        les trames VXLAN
+      → permet étendre VLANs entre datacenters
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLOUDLETS / VMs — RAPPEL CALCULS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Placement VMs (round-robin):
+  VMi → Hôte ((i-1) mod nb_hôtes) + 1
+  Ex: 5 VMs, 3 hôtes:
+  VM1→H1, VM2→H2, VM3→H3, VM4→H1, VM5→H2
+
+Max VMs/hôte (espace partagé):
+  = nb_coeurs_hôte / nb_coeurs_VM
+  Ex: 4 coeurs / 2 = 2 VMs max/hôte
+
+Placement cloudlets (round-robin):
+  CLi → VM ((i-1) mod nb_VMs) + 1
+  Ex: CL1,CL6→VM1 | CL2,CL7→VM2...
+
+Temps exécution:
+  T = longueur_MI / vitesse_MIPS
+  Ex: 2500MI / 500MIPS = 5s
+
+Temps partagé vs Espace partagé:
+  Espace partagé → VMs NE partagent PAS CPU
+                 → max VMs limité
+  Temps partagé  → VMs partagent CPU
+                 → peut mettre plus de VMs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IaaS / PaaS / SaaS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IaaS → CPU/réseau/stockage (EC2, Azure)
+PaaS → environnement dev (Heroku)
+SaaS → appli via navigateur (Gmail)
+
+         Classique IaaS PaaS SaaS
+App          ✅     ✅   ✅   ❌
+OS           ✅     ✅   ❌   ❌
+Virtualisation✅    ❌   ❌   ❌
+Matériel     ✅     ❌   ❌   ❌
+
+Élasticité:
+  Scale Up/Down   → augmenter/réduire 1 instance
+  Scale Out/In    → ajouter/retirer instances
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
