@@ -686,3 +686,36 @@ Matériel     ✅      ❌    ❌    ❌
   Scale Up/Down  → + ou - ressources 1 instance
   Scale Out/In   → + ou - nb d'instances (VMs)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LIRE UN TABLEAU CLOUDSIM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Colonnes: CL_ID | STATUS | DC | VM | Time | Start | Finish
+
+EXEMPLE (exercice révision):
+CL_ID | STATUS  | DC | VM | Time | Start | Finish
+  1   | SUCCESS |  2 |  1 |  5   |  0.1  |  5.1
+  6   | SUCCESS |  2 |  1 |  5   |  0.1  |  5.1
+  2   | SUCCESS |  2 |  2 |  5   |  0.1  |  5.1
+  7   | SUCCESS |  2 |  2 |  5   |  0.1  |  5.1
+
+Lecture:
+→ CL1 et CL6 sur VM1 → round-robin ✅
+→ Start identique (0.1) → parallèle ✅
+→ Time=5s = 2500MI/500MIPS → espace partagé ✅
+
+IDENTIFIER LA STRATÉGIE:
+  Espace partagé:
+  → Même VM, même Start/Finish
+  → Time = MI/MIPS (normal)
+  → Cloudlets EN PARALLÈLE si coeurs suffisants
+
+  Temps partagé:
+  → Time PLUS LONG que MI/MIPS normal
+  → Ex: 1 coeur, 2 cloudlets → chacune prend 2×
+  → Start différents ou temps allongé
+
+VÉRIFIER PLACEMENT:
+  VM ID dans tableau = round-robin attendu?
+  CL1→VM1, CL2→VM2... CL6→VM1... ✅
+  Si non → ressources insuffisantes detectées
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
