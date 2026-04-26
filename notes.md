@@ -618,45 +618,71 @@ VTEP  = Virtual Tunnel End Point
       → permet étendre VLANs entre datacenters
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CLOUDLETS / VMs — RAPPEL CALCULS
+CLOUDLETS / VMs — CALCULS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Placement VMs (round-robin):
-  VMi → Hôte ((i-1) mod nb_hôtes) + 1
-  Ex: 5 VMs, 3 hôtes:
+PLACEMENT VMs — round-robin (cycle rotation):
+  On distribue 1 par 1, on repart au début
   VM1→H1, VM2→H2, VM3→H3, VM4→H1, VM5→H2
 
-Max VMs/hôte (espace partagé):
-  = nb_coeurs_hôte / nb_coeurs_VM
-  Ex: 4 coeurs / 2 = 2 VMs max/hôte
+  Max VMs/hôte (espace partagé):
+  = coeurs_hôte ÷ coeurs_VM
+  Ex: 4 coeurs ÷ 2 = 2 VMs max/hôte
 
-Placement cloudlets (round-robin):
-  CLi → VM ((i-1) mod nb_VMs) + 1
-  Ex: CL1,CL6→VM1 | CL2,CL7→VM2...
+PLACEMENT cloudlets — round-robin sur VMs:
+  On distribue 1 par 1, on repart au début
+  CL1→VM1, CL2→VM2, CL3→VM3, CL4→VM4, CL5→VM5
+  CL6→VM1, CL7→VM2... (repart du début)
+  ⚠️ PAS 2 cloudlets consécutifs sur même VM
 
-Temps exécution:
-  T = longueur_MI / vitesse_MIPS
-  Ex: 2500MI / 500MIPS = 5s
+TEMPS EXÉCUTION:
+  T = longueur (MI) ÷ vitesse VM (MIPS)
+  Ex: 2500MI ÷ 500MIPS = 5s
 
-Temps partagé vs Espace partagé:
-  Espace partagé → VMs NE partagent PAS CPU
-                 → max VMs limité
-  Temps partagé  → VMs partagent CPU
-                 → peut mettre plus de VMs
+TEMPS TOTAL:
+  Si coeurs_VM ≥ cloudlets/VM → parallèle
+  → Temps total = temps 1 seule cloudlet = 5s
+
+ESPACE vs TEMPS PARTAGÉ:
+  Espace → VMs NE partagent PAS CPU
+           → max VMs limité
+           → Si assez ressources → même résultat
+  Temps  → VMs PARTAGENT CPU
+           → plus de VMs possible
+  ⚠️ Différence visible seulement si
+     ressources INSUFFISANTES pour espace partagé
+     Ex: 8 VMs, 3 hôtes × 2 max = 6 → 2 échouent
+     Temps partagé → les 8 passent ✅
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EXEMPLE COMPLET (exercice révision)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3 hôtes (4 coeurs 1000MIPS) | 5 VMs (2 coeurs 500MIPS)
+10 cloudlets (2500MI, 1 coeur) | espace partagé
+
+1. VMs: VM1,VM4→H1 | VM2,VM5→H2 | VM3→H3
+2. Cloudlets: CL1,CL6→VM1 | CL2,CL7→VM2
+              CL3,CL8→VM3 | CL4,CL9→VM4
+              CL5,CL10→VM5
+3. T = 2500/500 = 5s
+4. Temps total = 5s (parallèle, 2 coeurs/VM)
+5. Changer ordonnancement → RIEN NE CHANGE
+   (assez de ressources pour 5 VMs)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 IaaS / PaaS / SaaS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-IaaS → CPU/réseau/stockage (EC2, Azure)
+IaaS → CPU/réseau/stockage (EC2, Azure VMs)
 PaaS → environnement dev (Heroku)
-SaaS → appli via navigateur (Gmail)
+SaaS → appli via navigateur (Gmail, Office365)
 
-         Classique IaaS PaaS SaaS
-App          ✅     ✅   ✅   ❌
-OS           ✅     ✅   ❌   ❌
-Virtualisation✅    ❌   ❌   ❌
-Matériel     ✅     ❌   ❌   ❌
+         Classique  IaaS  PaaS  SaaS
+App          ✅      ✅    ✅    ❌
+OS           ✅      ✅    ❌    ❌
+Virtualisation✅     ❌    ❌    ❌
+Matériel     ✅      ❌    ❌    ❌
+↑ Plus on monte → moins l'entreprise gère
 
 Élasticité:
-  Scale Up/Down   → augmenter/réduire 1 instance
-  Scale Out/In    → ajouter/retirer instances
+  Scale Up/Down  → + ou - ressources 1 instance
+  Scale Out/In   → + ou - nb d'instances (VMs)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
